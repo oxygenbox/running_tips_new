@@ -6,11 +6,19 @@
 // IMprove follow question maybe run out then prompt
 //after third next then offer multiple hints
 
+
+//Today 5/7
+//test quatity
+//remove all legacy code
+
+
+
 const Alexa = require('ask-sdk');
 
 const data = require('./data/data');
 const runningSound = "<audio src='https://s3.amazonaws.com/ask-soundlibrary/human/amzn_sfx_person_running_01.mp3'/>";
 const followUpLimit = 3;
+const tipLimit = 4;
 
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
@@ -39,6 +47,59 @@ const LaunchRequestHandler = {
       .getResponse();
   },
 };
+
+
+const MultipleTipIntentHandler = {
+  canHandle(handlerInput) {
+    return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+      && handlerInput.requestEnvelope.request.intent.name === 'MultipleTipIntent';
+  },
+  handle(handlerInput) {
+
+    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes()
+    const qty = handlerInput.requestEnvelope.request.intent.slots.quantity.value;
+
+    var speechOutput = `multi-tip called`;
+    var repromptText = ` reprompt`
+    
+    if(qty < 1 || qty > tipLimit) {
+      //out of range
+      speechOutput = `you can set the number of tips to between 1 and ${tipLimit} per visit`;
+      repromptText = ` How many tiple would you like to hear per visit?`;
+    } else {
+      //set the value
+      sessionAttributes.tipsPerVisit = qty;
+      speechOutput = ` Great! I will give you ${qty} tips everytime you visit. `;
+      repromptText = `Would you like to hear more tips now?`;
+    }
+
+
+    /*
+      if(qty < 1 || qty > tipLimit) {
+        //out of range
+        speechOutput = ` you can set the number of tips to between 1 and ${tipLimit} per visit `;
+        repromptText = ` How many tiple would you like to hear per visit?`
+      } else {
+        // set the value for future visits
+        attributes.tipsPerVisit = qty;
+        speechOutput = ` Great! I will give you ${qty} tips everytime you visit. `;
+        repromptText = `Would you like to hear more tips now?`
+      }
+      */
+      speechOutput = `${speechOutput}, ${repromptText}`;
+
+    return handlerInput.responseBuilder
+      .speak(speechOutput)
+      .reprompt(repromptText)
+      .withSimpleCard('Hello World', speechOutput)
+      .getResponse();
+  },
+};
+
+
+
+
+
 
 const AnotherTipIntentIntentHandler = {
   canHandle(handlerInput) {
@@ -198,6 +259,7 @@ const skillBuilder = Alexa.SkillBuilders.standard();
 exports.handler = skillBuilder
   .addRequestHandlers(
     LaunchRequestHandler,
+    MultipleTipIntentHandler,
     AnotherTipIntentIntentHandler,
     YesIntentHandler,
     NoIntentHandler,
@@ -307,7 +369,7 @@ function buildTipMessage(attributes) {
   const lead = data.leadIn[leadIndex];
   const tipIndex = getNextTip.call(this, attributes);
   const tip = getTipAtIndex.call(this, tipIndex);
-  const delay = "<break time='0.7s' />";
+  const delay = "<break time='5ms' />";
 
   return `${runningSound} ${lead} ${delay} ${tip}`;
 }

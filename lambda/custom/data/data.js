@@ -1,7 +1,7 @@
 var data = {
     tips: [
      "Dress for 20 to 30 degrees warmer than the current temperature. While you may feel a bit chilled on your way out the door, you will warm up quickly once you start running.",
-     "Eat something about two hours  prior t your run. An engine cannot run on an empty tank.",
+     "Eat something about two hours  prior to your run. An engine cannot run on an empty tank.",
      "Try not to increase your mileage more than ten percent per week.",
      "Chapstick across your eyebrows can act as a barrier to keep sweat out of your eyes",
      "Pre-run, dynamic stretching <audio src='https://s3.amazonaws.com/ask-soundlibrary/cartoon/amzn_sfx_boing_short_1x_01.mp3'/> post-run, static stretching.<audio src='https://s3.amazonaws.com/ask-soundlibrary/cartoon/amzn_sfx_boing_med_1x_02.mp3'/>",
@@ -83,7 +83,7 @@ var data = {
     ],
 
     tipPrompt:[
-         
+
     ]
    
    };

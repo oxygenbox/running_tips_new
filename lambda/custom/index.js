@@ -7,9 +7,18 @@
 //after third next then offer multiple hints
 
 
-//Today 5/7
-//test quatity
-//remove all legacy code
+/*
+First visit and every third visit offer multiple tips if it wa not already
+play number of tips
+seque between tips
+play lead out
+
+
+
+Hey, Before I get back to my run did you know that you can ask me to give you between 1 and 4 tips each time you vist?
+add separeate launchreques
+*/
+
 
 
 
@@ -18,7 +27,7 @@ const Alexa = require('ask-sdk');
 const data = require('./data/data');
 const runningSound = "<audio src='https://s3.amazonaws.com/ask-soundlibrary/human/amzn_sfx_person_running_01.mp3'/>";
 const followUpLimit = 3;
-const tipLimit = 4;
+const tipLimit = 3;
 
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
@@ -33,9 +42,39 @@ const LaunchRequestHandler = {
       sessionAttributes.tipsPerVisit = 0;
     }
 
+   const tipMessage =  buildTipMessage.call(this, sessionAttributes);
+    const speechText = `your visit count is ${sessionAttributes.visits} ${tipMessage} `;
+
+    return handlerInput.responseBuilder
+      .speak(speechText)
+      .withSimpleCard('Hello World', speechText)
+      .getResponse();
+  },
+};
+
+
+const LaunchWithRepromptRequestHandler = {
+  canHandle(handlerInput) {
+    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    var promptCheck = sessionAttributes.tipsPerVisit < 1 && (sessionAttributes.visits % tipLimit === 0);
+    if(sessionAttributes.visits === 0){
+      promptCheck = true;
+    }
+    return handlerInput.requestEnvelope.request.type === 'LaunchRequest'
+    && promptCheck;
+  },
+  handle(handlerInput) {
+    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    sessionAttributes.visits += 1
+
+    //reset flag to not having been set
+    if(sessionAttributes.tipsPerVisit < 1){
+      sessionAttributes.tipsPerVisit = 0;
+    }
+
 
    const tipMessage =  buildTipMessage.call(this, sessionAttributes);
-   const repromptText = getReprompt.call(this, sessionAttributes);
+   const repromptText = getRepromptMessage.call(this, sessionAttributes);
    const delay = "<break time='2s' />";
   
     const speechText = `${tipMessage} ${delay} ${repromptText}`;
@@ -47,7 +86,6 @@ const LaunchRequestHandler = {
       .getResponse();
   },
 };
-
 
 const MultipleTipIntentHandler = {
   canHandle(handlerInput) {
@@ -65,27 +103,19 @@ const MultipleTipIntentHandler = {
     if(qty < 1 || qty > tipLimit) {
       //out of range
       speechOutput = `you can set the number of tips to between 1 and ${tipLimit} per visit`;
-      repromptText = ` How many tiple would you like to hear per visit?`;
+      repromptText = ` How many tips would you like to hear per visit?`;
     } else {
       //set the value
       sessionAttributes.tipsPerVisit = qty;
-      speechOutput = ` Great! I will give you ${qty} tips everytime you visit. `;
+      var tipInfo = `a tip`
+      if(qty > 1) {
+        tipInfo = `${qty} tips`
+      }
+
+      speechOutput = ` Great! I will give you ${tipInfo} everytime you visit. `;
       repromptText = `Would you like to hear more tips now?`;
     }
 
-
-    /*
-      if(qty < 1 || qty > tipLimit) {
-        //out of range
-        speechOutput = ` you can set the number of tips to between 1 and ${tipLimit} per visit `;
-        repromptText = ` How many tiple would you like to hear per visit?`
-      } else {
-        // set the value for future visits
-        attributes.tipsPerVisit = qty;
-        speechOutput = ` Great! I will give you ${qty} tips everytime you visit. `;
-        repromptText = `Would you like to hear more tips now?`
-      }
-      */
       speechOutput = `${speechOutput}, ${repromptText}`;
 
     return handlerInput.responseBuilder
@@ -258,6 +288,7 @@ const skillBuilder = Alexa.SkillBuilders.standard();
 
 exports.handler = skillBuilder
   .addRequestHandlers(
+    LaunchWithRepromptRequestHandler,
     LaunchRequestHandler,
     MultipleTipIntentHandler,
     AnotherTipIntentIntentHandler,
@@ -371,7 +402,21 @@ function buildTipMessage(attributes) {
   const tip = getTipAtIndex.call(this, tipIndex);
   const delay = "<break time='5ms' />";
 
-  return `${runningSound} ${lead} ${delay} ${tip}`;
+  //only play running sound if the tip has no other sfx
+  if (!tip.includes('<audio src=')) {
+    return `${runningSound} ${lead} ${delay} ${tip}`;
+   } else {
+    return `${lead} ${delay} ${tip}`;
+   }
+
+}
+
+function getRepromptMessage(attributes){
+  if(attributes.visits < 1){
+    return `fist visit reprompt`
+  } else {
+    return `this is visit ${attributes.visits}`
+  }
 }
 
 function getReprompt(attributes){
@@ -392,232 +437,9 @@ function getReprompt(attributes){
 
 }
 
-
 /*
-
-
-//----------
-function getNextItem(array) {
-  let val = array.shift()
-  array.push(val);
-  return val;
-}
-
-
 function sayAs(phrase) {
   const voiceName = `Kendra`
     return `<voice name=${voiceName}>${phrase}</voice>.`;
 }
-
 */
-
-  /*
-//
-
-
-var handlers = {
- 'LaunchRequest': function() {
-
-  //create index array
-  if (this.attributes['indexArray']) {}
-  else {
-   this.attributes['indexArray'] = newIndexArray();
-  }
-
-  //create lead in array
-  if (this.attributes['leadIn']) {}
-  else {
-   this.attributes['leadIn'] = createIndexArray(data.leadIn.length);
-  }
-
-  //create follow up tracker to monitor followUp
-  if (!this.attributes['followUpTracker']) {
-   this.attributes['followUpTracker'] = [];
-  }
-
-
-  this.emit('PlayRandomTip');
- },
-
- 'PlayRandomTip': function() {
-  
-   //create index array
-  if (this.attributes['indexArray']) {}
-  else {
-   this.attributes['indexArray'] = newIndexArray();
-  }
-
-  //create lead in array
-  if (this.attributes['leadIn']) {}
-  else {
-   this.attributes['leadIn'] = createIndexArray(data.leadIn.length);
-  }
-
-  //create follow up tracker to monitor followUp
-  if (!this.attributes['followUpTracker']) {
-   this.attributes['followUpTracker'] = [];
-  }
-  
-  
-  //GET A TIP
-  if (this.attributes['indexArray'].length < 1) {
-   this.attributes['indexArray'] = newIndexArray();
-  }
-
-  //grab a random postion
-  var index = Math.floor(Math.random() * this.attributes['indexArray'].length);
-  //grab index at that position
-  var tipIndex = this.attributes['indexArray'][index];
-  //delete the index from the array
-  this.attributes['indexArray'].splice(index, 1);
-  var tip = data.tips[tipIndex];
-
-  var speechOutput = "";
-  var leadIn = "";
-  var followUp = "";
-
-  
-
-  //GET A LEAD-IN
-  if (this.attributes['leadIn'].length < 1) {
-    this.attributes['leadIn'] = createIndexArray(data.leadIn.length);
-   }
-   index = Math.floor(Math.random() * this.attributes['leadIn'].length);
-   var leadInIndex = this.attributes['leadIn'][index];
-   this.attributes['leadIn'].splice(index, 1);
-   leadIn = data.leadIn[leadInIndex];
- 
-   //GET A FOLLOW UP 
-   if (this.attributes['followUpTracker'].length < followUpLimit) {
-    //hasnt hit limit
-    this.attributes['followUpTracker'].push(1);
-   }
-   else {
-    //limit reached play followup
-    //reset tracker
-    this.attributes['followUpTracker'] = [];
- 
-    //make sure array is populated
-    if (this.attributes['followUp'].length < 1) {
-     this.attributes['followUp'] = createIndexArray(data.followUp.length);
-    }
- 
-    index = Math.floor(Math.random() * this.attributes['followUp'].length);
-    var followUpIndex = this.attributes['followUp'][index];
-    this.attributes['followUp'].splice(index, 1);
-    followUp += "<break time='3s' />";
-    followUp += data.followUp[followUpIndex];
-    followUp += runningSound;
- 
-   }
- 
-   this.attributes['lastTip'] = tip;
- 
-   if (!tip.includes('<audio src=') && followUp === "") {
-    speechOutput = runningSound;
-   }
- 
-   speechOutput += leadIn;
-   speechOutput += "<break time='0.7s' />";
-   speechOutput += tip;
-   speechOutput += followUp;
-   this.emit(':tell', speechOutput);
- 
-  },
-  
-  'GetNewFactIntent': function() {
-  
-   this.emit('PlayRandomTip');
-  },
- 
- 
- 
- 
- 
- 
- };
- 
-
-  */
-
-
-
-  /*
-  //-----------------------------------
-
-{
-    "interactionModel": {
-        "languageModel": {
-            "invocationName": "running tips",
-            "intents": [
-               
-                {
-                    "name": "AMAZON.HelpIntent",
-                    "samples": []
-                },
-                
-                {
-                    "name": "GetNewFactIntent",
-                    "slots": [],
-                    "samples": [
-                        "Give me a tip",
-                        "Tell me a tip",
-                        "Give me a fact",
-                        "Tell me something interesting",
-                        "What have you got",
-                        "Give me a running tip",
-                        "",
-                        "",
-                        "",
-                        "",
-                        "",
-                        "What's the tip",
-                        ""
-                    ]
-                },
-                {
-                    "name": "AMAZON.NavigateHomeIntent",
-                    "samples": []
-                }
-            ],
-            "types": []
-        }
-    }
-}
-  */
-
-
-
-
-  /*
-
-
-
-
-const shortBreak = `<break time="0.25s"/>`;
-const midBreak = `<break time="0.5s"/>`;
-const longBreak = `<break time="1s"/>`;
-
-//HANDLERS
-
-
-
-
-
-
-
-  //HELPER FUNCTIONS
-
-  
-
-  function resetGame(attributes){
-    attributes.state = `play`;
-    attributes.score = 0;
-  }
-
-   
-
-
-
-
-  */

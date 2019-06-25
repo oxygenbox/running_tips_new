@@ -3,20 +3,20 @@
 
 
 //TODO
-// IMprove follow question maybe run out then prompt
+// Improve follow question maybe run out then prompt
 //after third next then offer multiple hints
-
+//First visit and every third visit offer multiple tips if it wa not already
+//play number of tips
+//seque between tips
+//play lead out
+//Hey, Before I get back to my run did you know that you can ask me to give you between 1 and 4 tips each time you vist?
+//add separate launchrequest
 
 /*
-First visit and every third visit offer multiple tips if it wa not already
-play number of tips
-seque between tips
-play lead out
 
 
 
-Hey, Before I get back to my run did you know that you can ask me to give you between 1 and 4 tips each time you vist?
-add separeate launchreques
+
 */
 
 
@@ -24,11 +24,22 @@ add separeate launchreques
 
 const Alexa = require('ask-sdk');
 
+
+const curl = "https://api.airtable.com/v0/appGz6ZUnAcuRqZqL/Quotes%201?maxRecords=3&view=Grid%20view"
+const api = `key3U134dikagDttl`
+
+//AirsTable Code
+var Airtable = require('airtable');
+var base = new Airtable({apiKey: 'key3U134dikagDttl'}).base('appGz6ZUnAcuRqZqL');
+
+
 const data = require('./data/data');
 const runningSound = "<audio src='https://s3.amazonaws.com/ask-soundlibrary/human/amzn_sfx_person_running_01.mp3'/>";
 const followUpLimit = 3;
 const tipLimit = 3;
 
+
+// Called when LaunchWithRepromptRequestHandler is not
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
     return handlerInput.requestEnvelope.request.type === 'LaunchRequest';
@@ -43,19 +54,20 @@ const LaunchRequestHandler = {
     }
 
    const tipMessage =  buildTipMessage.call(this, sessionAttributes);
-    const speechText = `your visit count is ${sessionAttributes.visits} ${tipMessage} `;
+   const speechText = `Launch request handler, ${sessionAttributes.visits} ${tipMessage} `;
 
     return handlerInput.responseBuilder
       .speak(speechText)
-      .withSimpleCard('Hello World', speechText)
+      .withSimpleCard('Running Tips', speechText)
       .getResponse();
   },
 };
 
-
+//Launch request with reprompt
 const LaunchWithRepromptRequestHandler = {
   canHandle(handlerInput) {
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    //tipsPerVisit has been increased
     var promptCheck = sessionAttributes.tipsPerVisit < 1 && (sessionAttributes.visits % tipLimit === 0);
     if(sessionAttributes.visits === 0){
       promptCheck = true;
@@ -66,18 +78,51 @@ const LaunchWithRepromptRequestHandler = {
   handle(handlerInput) {
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     sessionAttributes.visits += 1
-
+    
     //reset flag to not having been set
     if(sessionAttributes.tipsPerVisit < 1){
       sessionAttributes.tipsPerVisit = 0;
     }
 
+    Airtable.configure({ apiKey: 'key3U134dikagDttl' })
+
+    //----------------------
+    let retrieved = base('Quotes').select({
+      view: 'Grid view'
+  }).firstPage(function(err, records) {
+      if (err) { console.error(err); return; }
+      records.forEach(function(record) {
+          console.log('Retrieved', record.get('Quote'));
+      });
+  });
+
+   const table = base('Quote')
+
+  var tableArray = table.select({
+    view: 'Grid view'
+    }).firstPage((err, records) => {
+    if (err) {
+      console.error(err)
+      return
+    }
+
+    //all records are in the `records` array, do something with it
+})
+
+
+
+
+  console.log(retrieved);
+  //--------------------
+
+
+    
 
    const tipMessage =  buildTipMessage.call(this, sessionAttributes);
    const repromptText = getRepromptMessage.call(this, sessionAttributes);
    const delay = "<break time='2s' />";
   
-    const speechText = `${tipMessage} ${delay} ${repromptText}`;
+    const speechText = `Launch with repromp called Air table ${tipMessage} ${delay} ${repromptText}`;
 
     return handlerInput.responseBuilder
       .speak(speechText)
